@@ -1,0 +1,42 @@
+# Gemini (first write — overwrite/create)
+- id: "write:1-gemini"
+  agent: "gemini"
+  deps: []
+  payload:
+    kind: "shell"
+    repoPath: "."
+    cmd: >
+      powershell -NoLogo -Command
+      ./ai/gemini-cli/bin/gemini.ps1
+      -model "gemini-2.5-pro"
+      -prompt "Output exactly one line: 'Gemini line: <short random phrase>  [<ISO-8601 timestamp>]' and nothing else."
+      -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+      -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\gemini.txt"
+
+# Codex (append)
+- id: "write:2-codex"
+  agent: "codex"
+  deps: ["write:1-gemini"]
+  payload:
+    kind: "shell"
+    repoPath: "."
+    cmd: >
+      powershell -NoLogo -Command
+      ./ai/codex-cli/bin/codex.ps1
+      -prompt "Output exactly one line: 'Codex line: <short random phrase>  [<ISO-8601 timestamp>]' and nothing else."
+      -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+      -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\codex.txt"
+
+# Claude (append)
+- id: "write:3-claude"
+  agent: "claude"
+  deps: ["write:2-codex"]
+  payload:
+    kind: "shell"
+    repoPath: "."
+    cmd: >
+      powershell -NoLogo -Command
+      ./ai/claude-code/bin/claude.ps1
+      -prompt "Output exactly one line: 'Claude line: <short random phrase>  [<ISO-8601 timestamp>]' and nothing else."
+      -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+      -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\claude.txt"

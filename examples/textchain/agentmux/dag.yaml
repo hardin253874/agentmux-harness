@@ -1,0 +1,117 @@
+tasks:
+  # 1  Gemini
+  - id: "write:1-gemini"
+    name: "Gemini writes line 1"
+    agent: "gemini"
+    deps: []
+    payload:
+      kind: "shell"
+      repoPath: "./ai/gemini-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/gemini.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 2  Codex
+  - id: "write:2-codex"
+    name: "Codex writes line 2"
+    agent: "codex"
+    deps: ["write:1-gemini"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/codex-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/codex.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 3  Claude
+  - id: "write:3-claude"
+    name: "Claude writes line 3"
+    agent: "claude"
+    deps: ["write:2-codex"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/claude-code"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/claude.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 4  Gemini (append)
+  - id: "write:4-gemini"
+    name: "Gemini writes line 4"
+    agent: "gemini"
+    deps: ["write:3-claude"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/gemini-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/gemini.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt" -append
+
+  # 5  Codex
+  - id: "write:5-codex"
+    name: "Codex writes line 5"
+    agent: "codex"
+    deps: ["write:4-gemini"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/codex-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/codex.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 6  Claude
+  - id: "write:6-claude"
+    name: "Claude writes line 6"
+    agent: "claude"
+    deps: ["write:5-codex"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/claude-code"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/claude.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 7  Codex
+  - id: "write:7-codex"
+    name: "Codex writes line 7"
+    agent: "codex"
+    deps: ["write:6-claude"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/codex-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/codex.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 8  Claude
+  - id: "write:8-claude"
+    name: "Claude writes line 8"
+    agent: "claude"
+    deps: ["write:7-codex"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/claude-code"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/claude.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt"
+
+  # 9  Gemini (append)
+  - id: "write:9-gemini"
+    name: "Gemini writes line 9"
+    agent: "gemini"
+    deps: ["write:8-claude"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/gemini-cli"
+      cmd: >
+        powershell -NoLogo -Command
+        ./bin/gemini.ps1
+        -file "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\text\test.txt" -append

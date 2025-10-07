@@ -1,0 +1,7 @@
+﻿Loaded cached credentials.
+File C:\Users\d\.cache/vscode-ripgrep/ripgrep-v13.0.0-10-x86_64-pc-windows-msvc.zip has been cached
+Error when talking to Gemini API Full report available at: C:\Users\d\AppData\Local\Temp\gemini-client-error-Turn.run-sendMessageStream-2025-10-07T03-15-55-321Z.json
+
+
+OK 2025-10-07T14:15:55.3731877+11:00
+

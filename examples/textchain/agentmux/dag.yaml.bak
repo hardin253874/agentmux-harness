@@ -1,0 +1,36 @@
+tasks:
+  - id: "write:gemini"
+    name: "Gemini writes first line"
+    agent: "gemini"
+    deps: []
+    payload:
+      kind: "shell"
+      repoPath: "./ai/gemini-cli"
+      cmd: >
+        pwsh -NoLogo -Command
+        ./bin/gemini.ps1
+        --out "./artifacts/text/test.txt"
+
+  - id: "write:codex"
+    name: "Codex writes second line"
+    agent: "codex"
+    deps: ["write:gemini"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/codex-cli"
+      cmd: >
+        pwsh -NoLogo -Command
+        ./bin/codex.ps1
+        --file "./artifacts/text/test.txt"
+
+  - id: "write:claude"
+    name: "Claude writes third line"
+    agent: "claude"
+    deps: ["write:codex"]
+    payload:
+      kind: "shell"
+      repoPath: "./ai/claude-code"
+      cmd: >
+        pwsh -NoLogo -Command
+        ./bin/claude.ps1
+        --file "./artifacts/text/test.txt"

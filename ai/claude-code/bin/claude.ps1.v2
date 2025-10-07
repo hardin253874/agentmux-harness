@@ -1,0 +1,43 @@
+param(
+  [string]$in,
+  [string]$prompt = "",
+  [string]$out,
+  [string]$log = "",
+  [string]$model = "",           # e.g. "sonnet" or full name; per --model help
+  [string]$exe = "claude"        # real command
+)
+if (-not $out) { throw "Missing -out" }
+New-Item -ItemType Directory -Force -Path (Split-Path $out) | Out-Null
+if ($log) { New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null }
+
+if ($in) {
+  if (-not (Test-Path $in)) { throw "Input prompt file not found: $in" }
+  $prompt = Get-Content -Raw -Encoding UTF8 $in
+}
+if (-not $prompt) { throw "No prompt provided (-in or -prompt required)" }
+
+# One-shot print per help: claude -p --output-format text --model <model> "<prompt>"
+$argv = @("-p","--output-format","text")
+if ($model) { $argv += @("--model",$model) }
+$argv += $prompt
+
+$tmp = "$out.tmp"; if (Test-Path $tmp) { Remove-Item -Force $tmp }
+$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName = (Get-Command $exe -ErrorAction Stop).Source
+$psi.Arguments = ($argv | ForEach-Object { $_ -replace '"','\"' }) -join ' '
+$psi.RedirectStandardOutput = $true
+$psi.RedirectStandardError  = $true
+$psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+
+$p = New-Object System.Diagnostics.Process
+$p.StartInfo = $psi; [void]$p.Start()
+$stdout = $p.StandardOutput.ReadToEnd()
+$stderr = $p.StandardError.ReadToEnd()
+$p.WaitForExit()
+
+if ($log) { Add-Content -Path $log -Value $stderr }
+if ($p.ExitCode -ne 0) { throw "claude exited with $($p.ExitCode)`n$stderr" }
+
+$stdout | Out-File -Encoding utf8 $tmp
+Move-Item -Force $tmp $out
+if ($log) { Add-Content -Path $log -Value "`nOK $(Get-Date -Format o)`n" }

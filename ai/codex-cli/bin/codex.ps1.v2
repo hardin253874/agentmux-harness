@@ -1,0 +1,42 @@
+param(
+  [string]$in,                    # prompt file (optional)
+  [string]$prompt = "",           # inline prompt (fallback)
+  [string]$out,
+  [string]$log = "",
+  [string]$model = "",            # use a model your Codex CLI supports
+  [string]$exe = "codex"          # real command
+)
+if (-not $out) { throw "Missing -out" }
+New-Item -ItemType Directory -Force -Path (Split-Path $out) | Out-Null
+if ($log) { New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null }
+
+if ($in) {
+  if (-not (Test-Path $in)) { throw "Input prompt file not found: $in" }
+  $prompt = Get-Content -Raw -Encoding UTF8 $in
+}
+if (-not $prompt) { throw "No prompt provided (-in or -prompt required)" }
+
+# Non-interactive path per help: codex exec "<prompt>" [-m <model>]
+$argv = @("exec", $prompt)
+if ($model) { $argv += @("-m", $model) }
+
+$tmp = "$out.tmp"; if (Test-Path $tmp) { Remove-Item -Force $tmp }
+$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName = (Get-Command $exe -ErrorAction Stop).Source
+$psi.Arguments = ($argv | ForEach-Object { $_ -replace '"','\"' }) -join ' '
+$psi.RedirectStandardOutput = $true
+$psi.RedirectStandardError  = $true
+$psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+
+$p = New-Object System.Diagnostics.Process
+$p.StartInfo = $psi; [void]$p.Start()
+$stdout = $p.StandardOutput.ReadToEnd()
+$stderr = $p.StandardError.ReadToEnd()
+$p.WaitForExit()
+
+if ($log) { Add-Content -Path $log -Value $stderr }
+if ($p.ExitCode -ne 0) { throw "codex exited with $($p.ExitCode)`n$stderr" }
+
+$stdout | Out-File -Encoding utf8 $tmp
+Move-Item -Force $tmp $out
+if ($log) { Add-Content -Path $log -Value "`nOK $(Get-Date -Format o)`n" }

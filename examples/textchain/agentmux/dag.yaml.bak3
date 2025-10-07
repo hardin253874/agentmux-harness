@@ -1,0 +1,46 @@
+tasks:
+  - id: "spec:write"
+    name: "Gemini writes functional spec"
+    agent: "gemini"
+    deps: []
+    payload:
+      kind: "shell"
+      repoPath: "."
+      cmd: >
+        powershell -NoLogo -Command
+        ./ai/gemini-cli/bin/gemini.ps1
+        -exe "gemini"
+        -in  "C:\Developments\Develop\MyProjects\agentmux-harness\prompt\registration-spec.prompt.md"
+        -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\spec\registration-spec.md"
+        -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\gemini-spec.txt"
+        -model "gemini-1.5-pro"
+
+  - id: "plan:ticketize"
+    name: "Codex turns spec into tickets"
+    agent: "codex"
+    deps: ["spec:write"]
+    payload:
+      kind: "shell"
+      repoPath: "."
+      cmd: >
+        powershell -NoLogo -Command
+        ./ai/codex-cli/bin/codex.ps1
+        -in  "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\spec\registration-spec.md"
+        -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\tickets\tickets.json"
+        -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\codex-ticketize.txt"
+        -model "gpt-4o-mini"   # <-- or your real provider/model; adjust as needed
+
+  - id: "impl:T-001"
+    name: "Claude proposes implementation diff"
+    agent: "claude"
+    deps: ["plan:ticketize"]
+    payload:
+      kind: "shell"
+      repoPath: "."
+      cmd: >
+        powershell -NoLogo -Command
+        ./ai/claude-code/bin/claude.ps1
+        -in  "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\tickets\tickets.json"
+        -out "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\diffs\T-001.diff"
+        -log "C:\Developments\Develop\MyProjects\agentmux-harness\artifacts\logs\claude-T001.txt"
+        -model "sonnet"

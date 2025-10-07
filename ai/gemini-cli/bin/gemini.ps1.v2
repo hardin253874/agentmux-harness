@@ -1,0 +1,67 @@
+param(
+  [string]$in,                 # optional: file containing prompt
+  [string]$prompt = "",        # or inline
+  [string]$out,                # required
+  [string]$log = "",
+  [string]$model = "gemini-2.5-pro",
+  [string]$exe = "gemini"
+)
+
+if (-not $out) { throw "Missing -out" }
+New-Item -ItemType Directory -Force -Path (Split-Path $out) | Out-Null
+if ($log) { New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null }
+
+# Build prompt text
+if ($in) {
+  if (-not (Test-Path $in)) { throw "Input prompt file not found: $in" }
+  $prompt = Get-Content -Raw -Encoding UTF8 $in
+}
+if (-not $prompt) { throw "No prompt provided (-in or -prompt required)" }
+
+# Resolve the shim (.cmd/.ps1/.exe)
+$cmd = Get-Command $exe -ErrorAction SilentlyContinue
+if (-not $cmd) { throw "Command not found: $exe (put it on PATH or pass -exe)" }
+$exePath = $cmd.Source
+$ext = [IO.Path]::GetExtension($exePath).ToLowerInvariant()
+
+function Q([string]$s){ if ($s -notmatch '[\s"]'){return $s} '"' + ($s -replace '"','\"') + '"' }
+
+# EXACT shape that worked by hand:
+#   gemini -m "gemini-2.5-pro" -o text  "<positional prompt>"
+$argPieces = @("-m", $model, "-o", "text", $prompt)
+$cliArgs = ($argPieces | ForEach-Object { Q $_ }) -join ' '
+
+switch ($ext) {
+  ".cmd" { $launcher = "cmd.exe";        $launcherArgs = "/d /s /c " + (Q("$exePath $cliArgs")) }
+  ".bat" { $launcher = "cmd.exe";        $launcherArgs = "/d /s /c " + (Q("$exePath $cliArgs")) }
+  ".ps1" { $launcher = "powershell.exe"; $launcherArgs = "-NoProfile -ExecutionPolicy Bypass -File " + (Q($exePath)) + " " + $cliArgs }
+  ".psm1"{ $launcher = "powershell.exe"; $launcherArgs = "-NoProfile -ExecutionPolicy Bypass -Command " + (Q("& $exePath $cliArgs")) }
+  default{ $launcher = $exePath;         $launcherArgs = $cliArgs }
+}
+
+$tmp = "$out.tmp"; if (Test-Path $tmp) { Remove-Item -Force $tmp }
+
+# Run and capture stdout/stderr
+$psi = New-Object System.Diagnostics.ProcessStartInfo
+$psi.FileName = $launcher
+$psi.Arguments = $launcherArgs
+$psi.UseShellExecute = $false
+$psi.RedirectStandardOutput = $true
+$psi.RedirectStandardError  = $true
+$psi.CreateNoWindow = $true
+
+$p = New-Object System.Diagnostics.Process
+$p.StartInfo = $psi
+if (-not $p.Start()) { throw "Failed to start $launcher" }
+
+$stdout = $p.StandardOutput.ReadToEnd()
+$stderr = $p.StandardError.ReadToEnd()
+$p.WaitForExit()
+
+if ($log) { $stderr | Out-File -Encoding utf8 $log }
+if ($p.ExitCode -ne 0) { throw "gemini exited with $($p.ExitCode)`n$stderr" }
+
+$stdout | Out-File -Encoding utf8 $tmp
+Move-Item -Force $tmp $out
+if ($log) { Add-Content -Path $log -Value "`nOK $(Get-Date -Format o)`n" }
+Write-Host "Wrote $out"
